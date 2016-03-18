@@ -1,22 +1,19 @@
 # To run from terminal
 # python calibrate_undisort.py
-
 import cv2
-import sys
 import numpy as np
 import os
 import imutils
-# -------------- SET INFORMATION TO BE USED --------
-#Import Information
-#filename = 'GOPR005.MP4'
 
 def resizeImages(self,in_width):
     for i, img in enumerate(self.images):
         self.images[i] = imutils.resize(self.images[i], width=in_width)
 
-# --> This method does clahe on lab space to keep the color
-# transform to lab color space and conduct clahe filtering on l channel then merge and transform back
+
 def claheAdjustImages(img):
+    # --> This method does clahe on lab space to keep the color
+    # transform to lab color space and conduct clahe filtering on l channel then merge and transform back
+
     #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
     clahe = cv2.createCLAHE(clipLimit=6.0,tileGridSize=(8, 8))
     #self.logger.info("The clahe type {}".format(type(clahe.type)))
@@ -45,8 +42,6 @@ def fixCalibrationOriginal(folderpath_calib_images, newFolderName):
         if img is not None:
             # 1 run clahe on the image
             img = claheAdjustImages(img)
-
-
 
             # 2 convert to grayscale
             grey_image = cv2.cvtColor(img, cv2.cv.CV_RGB2GRAY)
@@ -86,7 +81,6 @@ def ImageProcessing(folderpath_calib_images, board_w, board_h, board_dim, image_
     n_boards =  nr_of_pics #2
 
     # 1 ----- Initializing variables
-    board_n = board_w * board_h
     objectPoints = []
     imagePoints = []
 
@@ -102,7 +96,6 @@ def ImageProcessing(folderpath_calib_images, board_w, board_h, board_dim, image_
     # fill
     object_points[:, :2] = np.mgrid[0:(board_w*board_dim):board_dim, 0:(board_h*board_dim):board_dim].T.reshape(-1, 2)
 
-
     # 3 Loop through the images.  Find checkerboard corners and save the data to imagePoints.
     for i in range(1, n_boards): #range(1, n_boards + 1):
 
@@ -113,9 +106,6 @@ def ImageProcessing(folderpath_calib_images, board_w, board_h, board_dim, image_
         image = images_list[i]
 
         print 'image = images_list[i]'
-
-
-
 
         # ---> Find chessboard corners
         # needs checkerboard with white bacground arounf them --> http://stackoverflow.com/questions/17993522/opencv-findchessboardcorners-function-is-failing-in-a-apparently-simple-scenar/20187143#20187143
@@ -199,24 +189,8 @@ def ImageProcessing(folderpath_calib_images, board_w, board_h, board_dim, image_
         print found
         print "did not find chessboard in image" + str(i)
 
-    '''
-    # ---->  8 Undistort Images and display them
-    for i in range(1, n_boards + 1):
 
-        #Loading images
-        print 'Loading... Calibration_Image' + str(i) + '.png'
-        image = cv2.imread(images_list(i))
-        # image = cv2.imread('Calibration_Image' + str(i) + '.png')
-
-        # undistort
-        undistorted_img = cv2.undistort(image, intrinsic_matrix, distCoeff, None)
-
-        cv2.imshow('Undisorted Image', undistorted_img)
-
-        char = cv2.waitKey(0)
-    '''
     cv2.destroyAllWindows()
-
 
 
 def UndistortImages(folderpath_undistort_theese_images, intrinsic_matrix, distCoeff):
@@ -239,22 +213,11 @@ def UndistortImages(folderpath_undistort_theese_images, intrinsic_matrix, distCo
 
         # 4 save the undistorted image
 
-
     cv2.destroyAllWindows()
 
-
-
 # The program is run from here ###################################################
-
-
-#print('We will collect ' + str(n_boards) + ' calibration images.')
-
-#ImageCollect(filename, n_boards)
-
-
-
-
-#folderpath_images = r"C:\MASTER_DATASET\Desembertokt\Mosaic Camera\Calibration Pictures\test_calib_images" # r is there becouse of --> http://stackoverflow.com/questions/7268618/python-issues-with-directories-that-have-special-characters
+# Import Information
+# folderpath_images = r"C:\MASTER_DATASET\Desembertokt\Mosaic Camera\Calibration Pictures\test_calib_images" # r is there becouse of --> http://stackoverflow.com/questions/7268618/python-issues-with-directories-that-have-special-characters
 
 folderpath_undistort_theese_images = "somewhere"
 
@@ -270,18 +233,21 @@ board_h = 15 # 6
 board_dim = 80
 #Image resolution
 image_size = (4008, 2672) # TODO: get the image size directly from the image
+'''
 # stereo rig : (1360, 1024)
 # mono rig = (4008, 2672)
 # gopro rig = (1920, 1080)
+'''
 
 # runs the method from here
 
-# since the calibration board does not have a white boarder arouynd them
+# since the calibration board does not have a white boarder around them
 # first "FIX" the calibration images
 
 # save them to newFolderName
 newFolderName = "fixed_Calibration_Images"
-folderpath_calib_images = r"calibrationIMG"
+#folderpath_calib_images = r"calibrationIMG"
+folderpath_calib_images = r"gimp_corrected_calibrationIMG"
 
 
 print("Starting camera calibration....")
@@ -299,13 +265,13 @@ print(' ')
 print('All the calibration images are fixed.')
 print('------------------------------------------------------------------------')
 
-
 # get the calibration parameters
 # from images in folder
 print('Step 2: Calibration of fixed images')
 print('We will analyze the images and calibrate the camera.')
 print(' ')
-folderpath_calib_images = r"fixed_Calibration_Images"
+#folderpath_calib_images = r"fixed_Calibration_Images"
+folderpath_calib_images
 [intrinsic_matrix, distCoeff] = ImageProcessing(folderpath_calib_images, board_w, board_h, board_dim, image_size)
 
 # undistort images using calibration data : intrinsic_matrix & distCoeff

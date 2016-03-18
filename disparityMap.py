@@ -1,4 +1,3 @@
-
 # python disparityMap.py
 import cv2
 import numpy as np
@@ -64,9 +63,6 @@ for i, (m, n) in enumerate(matches):
         pts1.append(kp1[m.queryIdx].pt)
 # Now we have the list of best matches from both the images.
 
-
-
-
 # pts1 = np.int32(pts1)
 # pts2 = np.int32(pts2)
 
@@ -95,8 +91,6 @@ rectification_homography1, rectification_homography2 = cv2.cv.StereoRectifyUncal
 # warpperspective
 warpImage1 = cv2.warpPerspective(img1, rectification_homography1, imageSize)
 warpImage2 = cv2.warpPerspective(img2, rectification_homography2, imageSize);
-
-
 
 # ------> Now we find the epilines in both the images and draw them.
 

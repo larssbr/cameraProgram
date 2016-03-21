@@ -1,5 +1,5 @@
 # To run from terminal
-# python calibrate_undisort.py
+# python undisort_usingParams_from_matlab.py
 import cv2
 import numpy as np
 import os
@@ -31,7 +31,6 @@ def claheAdjustImages(img):
 def load_images_from_folder(folder):
     images = []
     for filename in os.listdir(folder):
-        print 'filename is : ' + filename
         img = cv2.imread(os.path.join(folder, filename))
         if img is not None:
             images.append(img)
@@ -42,11 +41,9 @@ def fixCalibrationOriginal(folderpath_calib_images, newFolderName):
         img = cv2.imread(os.path.join(folderpath_calib_images, filename))
         if img is not None:
             # 1 run clahe on the image
-            print('run claheAdjustImages on image')
             img = claheAdjustImages(img)
 
             # 2 convert to grayscale
-            print 'convert to grayscale'
             grey_image = cv2.cvtColor(img, cv2.cv.CV_RGB2GRAY)
 
             # apply treshold
@@ -192,36 +189,140 @@ def ImageProcessing(folderpath_calib_images, board_w, board_h, board_dim, image_
         print found
         print "did not find chessboard in image" + str(i)
 
-
     cv2.destroyAllWindows()
 
-def UndistortImages(folderpath_undistort_theese_images, intrinsic_matrix, distCoeff):
-      # ---->  8 Undistort Images and display them
 
+def loadCameraParameters():
+
+    # left
+    fxL = 2222.72426
+    fyL = 2190.48031
+
+    k1L =  0.27724
+    k2L = 0.28163
+    k3L = -0.06867
+    k4L = 0.00358
+    k5L = 0.00000
+
+    cxL = 681.42537
+    cyL = -22.08306
+
+    skewL=0
+
+    # todo: find the p values
+    p1L=0
+    p2L=0
+    p3L=0
+    p4L=0
+
+    # right
+    fxR = 2226.10095
+    fyR = 2195.17250
+
+
+    k1R =  0.29407
+    k2R = 0.29892
+    k3R = 0-0.08315
+    k4R = -0.01218
+    k5R = 0.00000
+
+    cxR = 637.64260
+    cyR = -33.60849
+
+
+    skewR=0
+
+
+    # todo: find the p values
+    p1R=0
+    p2R=0
+    p3R=0
+    p4R=0
+
+    # x0 and y0 is zero
+    x0=0
+    y0=0
+
+    intrinsic_matrixL = np.matrix([[fxL, skewL , x0], [0, fyL, y0], [0, 0, 1]])
+    intrinsic_matrixR = np.matrix([[fxR, skewR , x0], [0, fyR, y0], [0, 0, 1]])
+
+    distCoeffL = np.matrix([k1L, k2L, p1L, p2L, k3L])
+    distCoeffR = np.matrix([k1R, k2R, p1R, p2R, k3R])
+    return intrinsic_matrixL, intrinsic_matrixR, distCoeffL, distCoeffR
+
+def UndistortImages(folderpath_undistort_theese_images, intrinsic_matrix, distCoeff):
+    # ---->  8 Undistort Images and display them
     images_list = load_images_from_folder(folderpath_undistort_theese_images)
     nr_of_pics = len(images_list)
-
-    for i in range(1, nr_of_pics + 1):
+    undistorted_imgList = []
+    for i in range(0, nr_of_pics):
         # 1 Loading images
-        print 'Loading... Calibration_Image' + str(i) + '.png'
-        image = cv2.imread(images_list(i))
+        print 'Loading... Calibration_Image' + str(i+1) + '.png'
+        image = images_list[i]
 
         # 2 Undistort the Image
         undistorted_img = cv2.undistort(image, intrinsic_matrix, distCoeff, None)
 
         # 3 show the undistorted image
-        cv2.imshow('Undisorted Image', undistorted_img)
-        cv2.waitKey(0)
+        #cv2.imshow('Undisorted Image', undistorted_img)
+        #cv2.waitKey(0)
 
-        # 4 save the undistorted image
+        # 4 return the undistorted image
+        undistorted_imgList.append(undistorted_img)
+    return undistorted_imgList
 
-    cv2.destroyAllWindows()
+
+    #cv2.destroyAllWindows()
+
+def getDisparity(imgLeft, imgRight, method="BM"):
+
+    gray_left = cv2.cvtColor(imgLeft, cv2.cv.CV_BGR2GRAY)
+    gray_right = cv2.cvtColor(imgRight, cv2.cv.CV_BGR2GRAY)
+    print gray_left.shape
+    c, r = gray_left.shape
+    if method == "BM":
+        sbm = cv2.cv.CreateStereoBMState()
+        disparity = cv2.cv.CreateMat(c, r, cv2.cv.CV_32F)
+        sbm.SADWindowSize = 9
+        sbm.preFilterType = 1
+        sbm.preFilterSize = 5
+        sbm.preFilterCap = 61
+        sbm.minDisparity = -39
+        sbm.numberOfDisparities = 112
+        sbm.textureThreshold = 507
+        sbm.uniquenessRatio = 0
+        sbm.speckleRange = 8
+        sbm.speckleWindowSize = 0
+
+        gray_left = cv2.cv.fromarray(gray_left)
+        gray_right = cv2.cv.fromarray(gray_right)
+
+        cv2.cv.FindStereoCorrespondenceBM(gray_left, gray_right, disparity, sbm)
+        disparity_visual = cv2.cv.CreateMat(c, r, cv2.cv.CV_8U)
+        cv2.cv.Normalize(disparity, disparity_visual, 0, 255, cv2.cv.CV_MINMAX)
+        disparity_visual = np.array(disparity_visual)
+
+    elif method == "SGBM":
+        sbm = cv2.StereoSGBM()
+        sbm.SADWindowSize = 9
+        sbm.numberOfDisparities = 96
+        sbm.preFilterCap = 63
+        sbm.minDisparity = -21
+        sbm.uniquenessRatio = 7
+        sbm.speckleWindowSize = 0
+        sbm.speckleRange = 8
+        sbm.disp12MaxDiff = 1
+        sbm.fullDP = False
+
+        disparity = sbm.compute(gray_left, gray_right)
+        disparity_visual = cv2.normalize(disparity, alpha=0, beta=255, norm_type=cv2.cv.CV_MINMAX, dtype=cv2.cv.CV_8U)
+
+    return disparity_visual
 
 # The program is run from here ###################################################
 # Import Information
 # folderpath_images = r"C:\MASTER_DATASET\Desembertokt\Mosaic Camera\Calibration Pictures\test_calib_images" # r is there becouse of --> http://stackoverflow.com/questions/7268618/python-issues-with-directories-that-have-special-characters
 
-folderpath_undistort_theese_images = "somewhere"
 
 #images_list = os.listdir(folderpath_images)
 #nr_of_pics = len(images_list)
@@ -229,16 +330,11 @@ folderpath_undistort_theese_images = "somewhere"
 #Input the number of board images to use for calibration (recommended: ~20)
 # n_boards =  nr_of_pics #2
 #Input the number of squares on the board (width and height)
-#board_w = 19 # 9
-#board_h = 15 # 6
-
-# since it gets rotated with treshold
-board_w = 15 # 9
-board_h = 19
-
-#Board dimensions (typically in cm)
+board_w = 19 # 9
+board_h = 15 # 6
+# Board dimensions (typically in cm)
 board_dim = 80
-#Image resolution
+# Image resolution
 image_size = (4008, 2672) # TODO: get the image size directly from the image
 '''
 # stereo rig : (1360, 1024)
@@ -246,16 +342,11 @@ image_size = (4008, 2672) # TODO: get the image size directly from the image
 # gopro rig = (1920, 1080)
 '''
 
-# runs the method from here
-
-# since the calibration board does not have a white boarder around them
-# first "FIX" the calibration images
-
 # save them to newFolderName
 newFolderName = "fixed_Calibration_Images"
-#folderpath_calib_images = r"calibrationIMGr"
-folderpath_calib_images = r"gimp_corrected_calibrationIMG"
-
+folderpath_calib_images = r"calibrationIMGr"
+#folderpath_calib_images = r"gimp_corrected_calibrationIMG"
+ #r"CalibrationIMG"
 
 print("Starting camera calibration....")
 print("Step 1: Image fixing")
@@ -277,15 +368,43 @@ print('------------------------------------------------------------------------'
 print('Step 2: Calibration of fixed images')
 print('We will analyze the images and calibrate the camera.')
 print(' ')
-#folderpath_calib_images = r"fixed_Calibration_Images"
-folderpath_calib_images
-[intrinsic_matrix, distCoeff] = ImageProcessing(folderpath_calib_images, board_w, board_h, board_dim, image_size)
+# Folderpath_calib_images = r"fixed_Calibration_Images"
+# Folderpath_calib_images
+# [intrinsic_matrix, distCoeff] = ImageProcessing(folderpath_calib_images, board_w, board_h, board_dim, image_size)
 
+# LOAD camera parameters from agisoft
+[intrinsic_matrixL, intrinsic_matrixR, distCoeffL, distCoeffR] = loadCameraParameters()
 
-# undistort images using calibration data : intrinsic_matrix & distCoeff
+# Undistort images using calibration data : intrinsic_matrix & distCoeff
+
+# Todo: find folders with left and right images
+folderpath_undistort_theese_imagesL = r"testIMGl"
+folderpath_undistort_theese_imagesR = r"testIMGr"
+
 print('Step 3:  and rectify the original images')
 print('we use the intrinsic_matrix & distCoeff to undistort the images.')
 print(' ')
-#UndistortImages(folderpath_undistort_theese_images, intrinsic_matrix, distCoeff)
+# First undistort images taken with left camera
+print('Undistort the left images')
+undistorted_imgListL = UndistortImages(folderpath_undistort_theese_imagesL, intrinsic_matrixL, distCoeffL)
 
-# rectify images
+# Secondly undistort images taken with right camera
+print('Undistort the right images')
+undistorted_imgListR = UndistortImages(folderpath_undistort_theese_imagesR, intrinsic_matrixR, distCoeffR)
+
+# Compute the disparity map
+disparity = getDisparity(undistorted_imgListL[0], undistorted_imgListR[0], method="BM")
+cv2.imshow("disparity1", disparity)
+cv2.imshow("left", undistorted_imgListL[0])
+
+cv2.imshow("right", undistorted_imgListR[0])
+#disparity2 = getDisparity(undistorted_imgListL[1], undistorted_imgListR[1], method="BM")
+#cv2.imshow("disparity2", disparity)
+
+#disparity = getDisparity(undistorted_imgListL[2], undistorted_imgListR[2], method="BM")
+#cv2.imshow("disparity3", disparity)
+
+
+cv2.waitKey(0)
+
+# Rectify images

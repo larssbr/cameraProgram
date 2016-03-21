@@ -30,8 +30,8 @@ def drawlines(img1, img2, lines, pts1, pts2):
 
 # WARNING: program needs to run on rectified images
 
-#img1 = cv2.imread('calibrationIMG/calibration_image1.jpg', 0)  #queryimage # left image
-#img2 = cv2.imread('calibrationIMG/calibration_image2.jpg', 0) #trainimage # right image
+#img1 = cv2.imread('calibrationIMGr/calibration_image1.jpg', 0)  #queryimage # left image
+#img2 = cv2.imread('calibrationIMGr/calibration_image2.jpg', 0) #trainimage # right image
 
 img1 = cv2.imread('images/calib_images/left01.jpg', 0)
 img2 = cv2.imread('images/calib_images/right01.jpg', 0)
@@ -121,8 +121,8 @@ Fundamental Matrix estimation is sensitive to quality of matches, outliers etc. 
 
 
 '''
-imgL = cv2.imread('calibrationIMG/calibration_image1.jpg', 0)
-imgR = cv2.imread('calibrationIMG/calibration_image2.jpg', 0)
+imgL = cv2.imread('calibrationIMGr/calibration_image1.jpg', 0)
+imgR = cv2.imread('calibrationIMGr/calibration_image2.jpg', 0)
 
 # Create disparity images
 stereo = cv2.StereoBM_create(numDisparities=16, blockSize=15)
